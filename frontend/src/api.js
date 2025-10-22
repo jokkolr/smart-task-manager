@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// 👇 Replace this URL with your Render backend URL after deployment
+// ✅ Backend URL (from Render)
 const API = axios.create({
-  baseURL: 'https://smart-task-manager-backend.onrender.com',
+  baseURL: 'https://smart-task-manager-jqlk.onrender.com',
 });
 
 export default API;
