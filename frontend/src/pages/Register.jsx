@@ -1,77 +1,63 @@
 import React, { useState } from "react";
-import API from "../api";
+import axios from "axios";
 
-export default function Register() {
+const Register = ({ goToDashboard }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setMessage("Registering...");
+  const BACKEND_URL = "https://smart-task-manager-jqlk.onrender.com";
 
+  const handleRegister = async () => {
     try {
-      const res = await API.post("/auth/register", { name, email, password });
-      setMessage(`✅ Account created for ${res.data.user?.name || name}!`);
+      const res = await axios.post(`${BACKEND_URL}/auth/register`, {
+        name,
+        email,
+        password,
+      });
+      if (res.status === 201 || res.status === 200) {
+        goToDashboard();
+      }
     } catch (err) {
-      setMessage("❌ Registration failed. Try again.");
+      console.error(err);
+      setError("Registration failed. Please try again.");
     }
   };
 
   return (
-    <div style={styles.container}>
-      <h2>🧠 Register</h2>
-      <form onSubmit={handleRegister} style={styles.form}>
-        <input
-          type="text"
-          placeholder="Full Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <button type="submit" style={styles.button}>Register</button>
-      </form>
-      <p>{message}</p>
+    <div style={{ textAlign: "center", marginTop: "50px" }}>
+      <h2>Register</h2>
+      <input
+        type="text"
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        style={{ margin: "5px" }}
+      />
+      <br />
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={{ margin: "5px" }}
+      />
+      <br />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        style={{ margin: "5px" }}
+      />
+      <br />
+      <button onClick={handleRegister} style={{ marginTop: "10px" }}>
+        Register
+      </button>
+      {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );
-}
-
-const styles = {
-  container: { textAlign: "center", marginTop: "80px" },
-  form: { display: "inline-block", textAlign: "left" },
-  input: {
-    display: "block",
-    margin: "10px 0",
-    padding: "10px",
-    width: "250px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    width: "100%",
-    padding: "10px",
-    backgroundColor: "#28a745",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
 };
+
+export default Register;
