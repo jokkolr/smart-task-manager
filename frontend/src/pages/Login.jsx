@@ -1,68 +1,53 @@
 import React, { useState } from "react";
-import API from "../api";
+import axios from "axios";
 
-export default function Login() {
+const Login = ({ goToDashboard }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setMessage("Logging in...");
+  const BACKEND_URL = "https://smart-task-manager-jqlk.onrender.com";
 
+  const handleLogin = async () => {
     try {
-      const res = await API.post("/auth/login", { email, password });
-      setMessage(`✅ Welcome back, ${res.data.user?.name || "User"}!`);
+      const res = await axios.post(`${BACKEND_URL}/auth/login`, {
+        email,
+        password,
+      });
+      if (res.status === 200) {
+        goToDashboard();
+      }
     } catch (err) {
-      setMessage("❌ Login failed. Check your credentials.");
+      console.error(err);
+      setError("Invalid email or password");
     }
   };
 
   return (
-    <div style={styles.container}>
-      <h2>🔐 Login</h2>
-      <form onSubmit={handleLogin} style={styles.form}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <button type="submit" style={styles.button}>Login</button>
-      </form>
-      <p>{message}</p>
+    <div style={{ textAlign: "center", marginTop: "50px" }}>
+      <h2>Login</h2>
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={{ margin: "5px" }}
+      />
+      <br />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        style={{ margin: "5px" }}
+      />
+      <br />
+      <button onClick={handleLogin} style={{ marginTop: "10px" }}>
+        Login
+      </button>
+      {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );
-}
-
-const styles = {
-  container: { textAlign: "center", marginTop: "80px" },
-  form: { display: "inline-block", textAlign: "left" },
-  input: {
-    display: "block",
-    margin: "10px 0",
-    padding: "10px",
-    width: "250px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    width: "100%",
-    padding: "10px",
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
 };
+
+export default Login;
