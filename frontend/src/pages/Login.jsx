@@ -15,6 +15,8 @@ const Login = ({ goToDashboard }) => {
         password,
       });
       if (res.status === 200) {
+        // Save token from backend
+        localStorage.setItem("token", res.data.token);
         goToDashboard();
       }
     } catch (err) {
