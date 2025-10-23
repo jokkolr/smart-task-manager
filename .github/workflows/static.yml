@@ -8,6 +8,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: frontend  # 👈 tell GitHub to look in frontend folder
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,4 +31,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+          publish_dir: ./frontend/dist   # 👈 for Vite builds
