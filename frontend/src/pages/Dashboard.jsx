@@ -1,19 +1,27 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const Dashboard = () => {
+const Dashboard = ({ logout }) => {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   // Your Render backend URL
   const BACKEND_URL = "https://smart-task-manager-jqlk.onrender.com";
 
+  // Check if user is logged in (simple localStorage check)
+  const token = localStorage.getItem("token"); // Assume backend sends token on login
+
   // Fetch tasks from backend
   const fetchTasks = async () => {
+    if (!token) return; // Only fetch if logged in
     setLoading(true);
     try {
-      const res = await axios.get(`${BACKEND_URL}/tasks/`);
+      const res = await axios.get(`${BACKEND_URL}/tasks/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setTasks(res.data);
     } catch (error) {
       console.error(error);
@@ -23,9 +31,13 @@ const Dashboard = () => {
 
   // Add a new task
   const addTask = async () => {
-    if (!newTask) return;
+    if (!newTask || !token) return;
     try {
-      await axios.post(`${BACKEND_URL}/tasks/`, { title: newTask });
+      await axios.post(
+        `${BACKEND_URL}/tasks/`,
+        { title: newTask },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setNewTask("");
       fetchTasks();
     } catch (error) {
@@ -36,7 +48,45 @@ const Dashboard = () => {
   // Mark task as completed
   const completeTask = async (id) => {
     try {
-      await axios.post(`${BACKEND_URL}/tasks/complete`, { task_id: id });
+      await axios.post(
+        `${BACKEND_URL}/tasks/complete`,
+        { task_id: id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchTasks();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Delete task
+  const deleteTask = async (id) => {
+    try {
+      await axios.delete(`${BACKEND_URL}/tasks/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchTasks();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Start editing a task
+  const startEdit = (task) => {
+    setEditingTaskId(task.id);
+    setEditingTitle(task.title);
+  };
+
+  // Save edited task
+  const saveEdit = async (id) => {
+    try {
+      await axios.put(
+        `${BACKEND_URL}/tasks/${id}`,
+        { title: editingTitle },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setEditingTaskId(null);
+      setEditingTitle("");
       fetchTasks();
     } catch (error) {
       console.error(error);
@@ -47,9 +97,35 @@ const Dashboard = () => {
     fetchTasks();
   }, []);
 
+  if (!token) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <h2>Please log in to view your tasks</h2>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ maxWidth: "800px", margin: "50px auto", padding: "20px" }}>
-      <h1 style={{ textAlign: "center", marginBottom: "30px" }}>📋 Dashboard</h1>
+    <div style={{ maxWidth: "900px", margin: "50px auto", padding: "20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h1>📋 Dashboard</h1>
+        <button
+          onClick={() => {
+            localStorage.removeItem("token");
+            logout();
+          }}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#f44336",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          Logout
+        </button>
+      </div>
 
       {/* Add new task */}
       <div style={{ display: "flex", marginBottom: "20px" }}>
@@ -111,26 +187,96 @@ const Dashboard = () => {
           {tasks.map((task) => (
             <tr key={task.id}>
               <td style={{ padding: "12px", borderBottom: "1px solid #ddd" }}>{task.id}</td>
-              <td style={{ padding: "12px", borderBottom: "1px solid #ddd" }}>{task.title}</td>
+
+              {/* Task title editable */}
               <td style={{ padding: "12px", borderBottom: "1px solid #ddd" }}>
+                {editingTaskId === task.id ? (
+                  <input
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    style={{ width: "100%", padding: "6px" }}
+                  />
+                ) : (
+                  task.title
+                )}
+              </td>
+
+              {/* Status */}
+              <td
+                style={{
+                  padding: "12px",
+                  borderBottom: "1px solid #ddd",
+                  color: task.completed ? "green" : "red",
+                  fontWeight: "bold",
+                }}
+              >
                 {task.completed ? "✅ Completed" : "❌ Pending"}
               </td>
+
+              {/* Actions */}
               <td style={{ padding: "12px", borderBottom: "1px solid #ddd" }}>
-                {!task.completed && (
+                {!task.completed && editingTaskId !== task.id && (
+                  <>
+                    <button
+                      onClick={() => completeTask(task.id)}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#2196F3",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                        marginRight: "5px",
+                      }}
+                    >
+                      Complete
+                    </button>
+                    <button
+                      onClick={() => startEdit(task)}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#FFC107",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                        marginRight: "5px",
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </>
+                )}
+                {editingTaskId === task.id && (
                   <button
-                    onClick={() => completeTask(task.id)}
+                    onClick={() => saveEdit(task.id)}
                     style={{
                       padding: "6px 12px",
-                      backgroundColor: "#2196F3",
+                      backgroundColor: "#4CAF50",
                       color: "white",
                       border: "none",
                       borderRadius: "5px",
                       cursor: "pointer",
+                      marginRight: "5px",
                     }}
                   >
-                    Complete
+                    Save
                   </button>
                 )}
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  style={{
+                    padding: "6px 12px",
+                    backgroundColor: "#f44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           ))}
