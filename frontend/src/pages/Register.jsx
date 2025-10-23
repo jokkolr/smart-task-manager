@@ -17,6 +17,8 @@ const Register = ({ goToDashboard }) => {
         password,
       });
       if (res.status === 201 || res.status === 200) {
+        // Save token from backend
+        localStorage.setItem("token", res.data.token);
         goToDashboard();
       }
     } catch (err) {
